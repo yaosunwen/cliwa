@@ -9,7 +9,6 @@ module.exports = function(config, logger) {
 
   const {execHandler, fileHandler} = require('./lib/cli-handlers')(config, logger);
   const {forwardHandler} = require('./lib/forward-handlers')(config, logger);
-  const {uploadHandler, downloadHandler} = require('./lib/s3-handlers')(config, logger);
   const {reqLogHandler, resLogHandler} = require('./lib/log-handlers')(config, logger);
 
   const cliwa = express.Router();
@@ -18,15 +17,18 @@ module.exports = function(config, logger) {
   cliwa.use(resLogHandler);
   cliwa.use(urlencoded({extended: true})); // for parsing application/x-www-form-urlencoded
   cliwa.use(express.static(__dirname + '/public'));
-  cliwa.post('/exec', [
-    execHandler,
-    uploadHandler
-  ]);
-  cliwa.get('/cli/:id/:filename', [
-    fileHandler,
-    forwardHandler,
-    downloadHandler
-  ]);
+
+  var execHandlers = [execHandler];
+  var cliHandlers = [fileHandler, forwardHandler];
+  if (config.s3 != null) {
+    logger.info('loading s3 handlers ...');
+    const {uploadHandler, downloadHandler} = require('./lib/s3-handlers')(config, logger);
+    execHandlers.push(uploadHandler);
+    cliHandlers.push(downloadHandler);
+  }
+
+  cliwa.post('/exec', execHandlers);
+  cliwa.get('/cli/:id/:filename', cliHandlers);
 
   return cliwa;
 }
