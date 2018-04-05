@@ -9,6 +9,10 @@
   },
   "author": "yaosunwen",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yaosunwen/cliwa.git"
+  },
   "dependencies": {
     "aws-sdk": "^2.207.0",
     "bootstrap": "^4.0.0",
