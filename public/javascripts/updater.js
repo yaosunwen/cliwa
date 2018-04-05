@@ -1,40 +1,13 @@
 var cliwa = cliwa || {};
 (function(cliwa, $, undefined) {
 
-  // $("<style type='text/css'> .redbold{ color:#f00; font-weight:bold;} </style>").appendTo("head");
-  // $('head').append('<style>.loading:after{}</style>');
-
   function Updater(selector) {
     this.selector = selector;
   }
   Updater.prototype = Object.create(Object.prototype);
   Updater.prototype.constructor = Updater;
-  Updater.prototype.createCSS = function () {
-    if ($('#__loading__css__').length > 0) {
-      return;
-    }
-    $('head').append('<style id="__loading__css__">.loading:after{content:url(' + cliwa.baseUrl + '/images/loading.gif);}</style>');
-  }
-  Updater.prototype.toggleLoadState = function() {
-    this.createCSS();
-    var container = $(this.selector);
-    container.toggleClass('loading');
-  }
-  Updater.prototype.showLoadingState = function() {
-    this.createCSS();
-    var container = $(this.selector);
-    container.addClass('loading');
-  }
-  Updater.prototype.hideLoadingState = function() {
-    this.createCSS();
-    var container = $(this.selector);
-    container.removeClass('loading');
-  }
-  Updater.prototype.onStart = function() {
-    var container = $(this.selector);
-    container.append('<table class="terminal"></table>');
-  }
-  Updater.prototype.onDone = function(data) {}
+  Updater.prototype.onStart = function() {}
+  Updater.prototype.onDone = function() {}
   Updater.prototype.onData = function(data) {}
 
   function CmdUpdater(selector) {
@@ -42,8 +15,6 @@ var cliwa = cliwa || {};
   }
   CmdUpdater.prototype = Object.create(Updater.prototype);
   CmdUpdater.prototype.constructor = CmdUpdater;
-  CmdUpdater.prototype.onStart = function() {}
-  CmdUpdater.prototype.onDone = function() {}
   CmdUpdater.prototype.onData = function(data) {
     data = JSON.parse(data);
     var container = $(this.selector);
@@ -60,11 +31,8 @@ var cliwa = cliwa || {};
   ResultUpdater.prototype.constructor = ResultUpdater;
   ResultUpdater.prototype.onStart = function() {
     Object.getPrototypeOf(ResultUpdater.prototype).onStart.call(this);
-    this.showLoadingState();
-  }
-  ResultUpdater.prototype.onDone = function() {
-    Object.getPrototypeOf(ResultUpdater.prototype).onDone.call(this);
-    this.hideLoadingState();
+    var container = $(this.selector);
+    container.append('<table class="terminal"></table>');
   }
   ResultUpdater.prototype.onData = function(data) {
     console.log('result updater received ' + data);
@@ -83,6 +51,11 @@ var cliwa = cliwa || {};
   }
   StdoutUpdater.prototype = Object.create(Updater.prototype);
   StdoutUpdater.prototype.constructor = StdoutUpdater;
+  StdoutUpdater.prototype.onStart = function() {
+    Object.getPrototypeOf(StdoutUpdater.prototype).onStart.call(this);
+    var container = $(this.selector);
+    container.append('<table class="terminal"></table>');
+  }
   StdoutUpdater.prototype.onData = function(data) {
     var container = $(this.selector);
     var startIndex = 0;
@@ -122,8 +95,38 @@ var cliwa = cliwa || {};
   StderrUpdater.prototype = Object.create(StdoutUpdater.prototype);
   StderrUpdater.prototype.constructor = StderrUpdater;
 
+  function LoadingUpdater(selector) {
+    Updater.call(this, selector);
+    this.count = 0;
+  }
+  LoadingUpdater.prototype = Object.create(Updater.prototype);
+  LoadingUpdater.prototype.constructor = LoadingUpdater;
+  LoadingUpdater.prototype.onStart = function() {
+    Object.getPrototypeOf(LoadingUpdater.prototype).onStart.call(this);
+    this.count++;
+    if ($('#__loading__css__').length <= 0) {
+      $('head').append('<style id="__loading__css__">.loading:after{content:url(' + cliwa.baseUrl + '/images/loading.gif);}</style>');
+    }
+    if (this.count > 0) {
+      var container = $(this.selector);
+      container.addClass('loading');
+      console.log('addClass loading, ', this.count);
+    }
+  }
+  LoadingUpdater.prototype.onDone = function() {
+    Object.getPrototypeOf(LoadingUpdater.prototype).onDone.call(this);
+    console.log('LoadingUpdater onDone', this.count);
+    this.count--;
+    if (this.count == 0) {
+      var container = $(this.selector);
+      container.removeClass('loading');
+      console.log('removeClass loading, ', this.count);
+    }
+  }
+
   cliwa.CmdUpdater = CmdUpdater;
   cliwa.ResultUpdater = ResultUpdater;
   cliwa.StdoutUpdater = StdoutUpdater;
   cliwa.StderrUpdater = StderrUpdater;
+  cliwa.LoadingUpdater = LoadingUpdater;
 })(cliwa, jQuery);

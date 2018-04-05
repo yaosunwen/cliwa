@@ -56,16 +56,16 @@ var cliwa = cliwa || {};
   }
   AjaxPoller.prototype = Object.create(Object.prototype);
   AjaxPoller.prototype.constructor = AjaxPoller;
-  AjaxPoller.prototype.on = function(evt, callback) {
+  AjaxPoller.prototype.on = function(evt, ...callbacks) {
     if (evt == 'data') {
       this.dataCallbacks = this.dataCallbacks || [];
-      this.dataCallbacks.push(callback);
+      callbacks.forEach(cb => this.dataCallbacks.push(cb));
     } else if (evt == 'start') {
       this.startCallbacks = this.startCallbacks || [];
-      this.startCallbacks.push(callback);
+      callbacks.forEach(cb => this.startCallbacks.push(cb));
     } else if (evt == 'done') {
       this.doneCallbacks = this.doneCallbacks || [];
-      this.doneCallbacks.push(callback);
+      callbacks.forEach(cb => this.doneCallbacks.push(cb));
     }
   }
   AjaxPoller.prototype.trigger = function(evt) {
@@ -74,12 +74,18 @@ var cliwa = cliwa || {};
     if (evt == 'data') {
       callbacks = this.dataCallbacks;
     } else if (evt == 'start') {
-      callbacks = this.startCallbacks;
+      if (!this.startCallbacks.triggerred) {
+        callbacks = this.startCallbacks;
+        this.startCallbacks.triggerred = true;
+      }
     } else if (evt == 'done') {
-      callbacks = this.doneCallbacks;
+      if (!this.doneCallbacks.triggerred) {
+        callbacks = this.doneCallbacks;
+        this.doneCallbacks.triggerred = true;
+      }
     }
     var args = Array.prototype.slice.call(arguments, 1);
-    $.each(callbacks, function(i, v) { v.apply(poller, args); });
+    callbacks.forEach(cb => cb.apply(poller, args));
   }
   AjaxPoller.prototype.start = function() {
     this.trigger('start');
@@ -105,22 +111,6 @@ var cliwa = cliwa || {};
       },
       complete: function(jqXHR, textStatus) {
         console.log(logPrefix + ' complete, status: ' + jqXHR.status);
-        if (jqXHR.status == 404) {
-          poller.trigger('done', jqXHR.status);
-          return;
-        }
-        if (jqXHR.status == 416) {
-          poller.trigger('done', jqXHR.status);
-          return;
-        }
-        if (jqXHR.status == 200) {
-          poller.trigger('done', jqXHR.status);
-          return;
-        }
-        if (jqXHR.status == 304) {
-          poller.trigger('done', jqXHR.status);
-          return;
-        }
 
         var contentRange = parseContentRange(jqXHR.getResponseHeader('Content-Range'));
         if (contentRange != null && contentRange.end + 1 == contentRange.size) {
@@ -144,9 +134,19 @@ var cliwa = cliwa || {};
             }
           }
           setTimeout(poller.run.bind(poller), contentLength > 0 ? 0 : poller.interval);
-        } else {
-          setTimeout(poller.run.bind(poller), poller.interval);
+          return;
         }
+
+        var retryCodes = [408, 500, 503, 504];
+        for (var i = 0; i < retryCodes.length; i++) {
+          if (jqXHR.status == retryCodes[i]) {
+            setTimeout(poller.run.bind(poller), poller.interval);
+            return;
+          }
+        }
+
+        poller.trigger('done', jqXHR.status);
+        return;
       }
     });
   }
