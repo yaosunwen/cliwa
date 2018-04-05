@@ -4,8 +4,8 @@
   "description": "CLI Web Access",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint lib index.js"
+    "test": "mocha test",
+    "lint": "eslint lib test index.js"
   },
   "author": "yaosunwen",
   "license": "MIT",
@@ -20,7 +20,9 @@
     "express": "^4.16.2",
     "jquery": "^3.3.1",
     "morgan": "^1.9.0",
-    "node-uuid": "^1.4.8"
+    "node-uuid": "^1.4.8",
+    "npm": "^5.8.0",
+    "popper.js": "^1.14.3"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
@@ -28,6 +30,8 @@
     "eslint-plugin-import": "^2.9.0",
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.7.0",
-    "eslint-plugin-standard": "^3.0.1"
+    "eslint-plugin-standard": "^3.0.1",
+    "mocha": "^5.0.5",
+    "should": "^13.2.1"
   }
 }
