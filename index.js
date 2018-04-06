@@ -1,7 +1,7 @@
 'use strict'
 
 const express = require('express');
-const uuid = require('node-uuid')
+const uuid = require('uuid')
 const {urlencoded} = require('body-parser');
 
 module.exports = function(config, logger) {
