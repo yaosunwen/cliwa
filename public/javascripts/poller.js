@@ -2,7 +2,7 @@ var cliwa = cliwa || {};
 (function(cliwa, $, undefined) {
 
   const DEFAULT_INTERVAL = 5000;
-  const DEFAULT_BASE_URL = '/cliwa';
+  const DEFAULT_BASE_URL = 'cliwa';
   const DEFAULT_RANGE_SIZE = 1024 * 64;
   const DEFAULT_MAX_SIZE = 1024 * 1024;
   if (!('interval' in cliwa)) {
